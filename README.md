@@ -52,5 +52,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 Contact
 For any questions or suggestions, please contact me at adryden508@gmail.com.
-
-Feel free to customize this README to better fit your project’s needs!
