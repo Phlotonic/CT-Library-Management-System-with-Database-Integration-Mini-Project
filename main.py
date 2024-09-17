@@ -1,70 +1,9 @@
-class Book:
-    def __init__(self, title, author, genre, publication_date):
-        self.__title = title
-        self.__author = author
-        self.__genre = genre
-        self.__publication_date = publication_date
-        self.__is_available = True
-
-    # Getters and setters for encapsulation
-    def get_title(self):
-        return self.__title
-
-    def get_author(self):
-        return self.__author
-
-    def get_genre(self):
-        return self.__genre
-
-    def get_publication_date(self):
-        return self.__publication_date
-
-    def is_available(self):
-        return self.__is_available
-
-    def borrow(self):
-        if self.__is_available:
-            self.__is_available = False
-            return True
-        return False
-
-    def return_book(self):
-        self.__is_available = True
-
-class User:
-    def __init__(self, name, library_id):
-        self.__name = name
-        self.__library_id = library_id
-        self.__borrowed_books = []
-
-    # Getters and setters for encapsulation
-    def get_name(self):
-        return self.__name
-
-    def get_library_id(self):
-        return self.__library_id
-
-    def get_borrowed_books(self):
-        return self.__borrowed_books
-
-    def borrow_book(self, book_title):
-        self.__borrowed_books.append(book_title)
-
-    def return_book(self, book_title):
-        if book_title in self.__borrowed_books:
-            self.__borrowed_books.remove(book_title)
-
-class Author:
-    def __init__(self, name, biography):
-        self.__name = name
-        self.__biography = biography
-
-    # Getters and setters for encapsulation
-    def get_name(self):
-        return self.__name
-
-    def get_biography(self):
-        return self.__biography
+from book import Book
+from user import User
+from author import Author
+from reservation import Reservation
+from borrowed_book import BorrowedBook
+from datetime import datetime, timedelta
 
 def main_menu():
     print("Welcome to the Library Management System!")
@@ -110,19 +49,29 @@ def add_new_book(library):
     title = input("Enter book title: ")
     author = input("Enter book author: ")
     genre = input("Enter book genre: ")
-    publication_date = input("Enter publication date: ")
+    publication_date = input("Enter publication date (YYYY-MM-DD): ")
+    isbn = input("Enter ISBN (10 digits): ")
 
-    new_book = Book(title, author, genre, publication_date)
+    try:
+        publication_date = Book.validate_publication_date(publication_date)
+        isbn = Book.validate_isbn(isbn)
+    except ValueError as e:
+        print(e)
+        return
+
+    new_book = Book(title, author, genre, publication_date, isbn)
     library.append(new_book)
     print("Book added successfully!")
 
-def borrow_book(library, user):
+def borrow_book_with_due_date(library, user):
     title = input("Enter the title of the book to borrow: ")
     for book in library:
         if book.get_title() == title:
             if book.borrow():
-                user.borrow_book(title)
-                print("Book borrowed successfully!")
+                due_date = datetime.now() + timedelta(days=14)  # 2 weeks due date
+                new_book = BorrowedBook(title, due_date)
+                user.borrow_book(new_book)
+                print(f"Book borrowed successfully! Due date: {due_date.strftime('%Y-%m-%d')}")
             else:
                 print("Book is currently unavailable.")
             return
@@ -146,17 +95,24 @@ def search_book(library):
             print(f"Author: {book.get_author()}")
             print(f"Genre: {book.get_genre()}")
             print(f"Publication Date: {book.get_publication_date()}")
+            print(f"ISBN: {book.get_isbn()}")
             print(f"Availability: {'Available' if book.is_available() else 'Borrowed'}")
             return
     print("Book not found.")
 
 def display_all_books(library):
     for book in library:
-        print(f"Title: {book.get_title()}, Author: {book.get_author()}, Genre: {book.get_genre()}, Publication Date: {book.get_publication_date()}, Availability: {'Available' if book.is_available() else 'Borrowed'}")
+        print(f"Title: {book.get_title()}, Author: {book.get_author()}, Genre: {book.get_genre()}, Publication Date: {book.get_publication_date()}, ISBN: {book.get_isbn()}, Availability: {'Available' if book.is_available() else 'Borrowed'}")
 
 def add_new_user(users):
     name = input("Enter user name: ")
-    library_id = input("Enter library ID: ")
+    library_id = input("Enter library ID (5 digits): ")
+
+    try:
+        library_id = User.validate_library_id(library_id)
+    except ValueError as e:
+        print(e)
+        return
 
     new_user = User(name, library_id)
     users.append(new_user)
@@ -197,25 +153,6 @@ def display_all_authors(authors):
     for author in authors:
         print(f"Name: {author.get_name()}, Biography: {author.get_biography()}")
 
-import os
-
-def load_data(file_name):
-    if os.path.exists(file_name):
-        with open(file_name, 'r') as file:
-            return file.readlines
-        
-class Reservation:
-    def __init__(self, book_title, user_id):
-        self.__book_title = book_title
-        self.__user_id = user_id
-
-    # Getters for encapsulation
-    def get_book_title(self):
-        return self.__book_title
-
-    def get_user_id(self):
-        return self.__user_id
-
 def reserve_book(library, reservations, user):
     title = input("Enter the title of the book to reserve: ")
     for book in library:
@@ -238,34 +175,6 @@ def check_reservations(library, reservations, users):
                         print(f"Notification: Book '{book.get_title()}' is now available for user {user.get_name()}.")
                         reservations.remove(reservation)
                         break
-
-from datetime import datetime, timedelta
-
-class BorrowedBook:
-    def __init__(self, book_title, due_date):
-        self.__book_title = book_title
-        self.__due_date = due_date
-
-    # Getters for encapsulation
-    def get_book_title(self):
-        return self.__book_title
-
-    def get_due_date(self):
-        return self.__due_date
-
-def borrow_book_with_due_date(library, user):
-    title = input("Enter the title of the book to borrow: ")
-    for book in library:
-        if book.get_title() == title:
-            if book.borrow():
-                due_date = datetime.now() + timedelta(days=14)  # 2 weeks due date
-                borrowed_book = BorrowedBook(title, due_date)
-                user.borrow_book(borrowed_book)
-                print(f"Book borrowed successfully! Due date: {due_date.strftime('%Y-%m-%d')}")
-            else:
-                print("Book is currently unavailable.")
-            return
-    print("Book not found.")
 
 def calculate_fine(user):
     total_fine = 0
